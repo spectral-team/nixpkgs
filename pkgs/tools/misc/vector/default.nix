@@ -115,6 +115,10 @@ rustPlatform.buildRustPackage {
   postPatch = ''
     substituteInPlace ./src/dns.rs \
       --replace "#[tokio::test]" ""
+  ''
+  # Don't fail on compilation warnings; this reduces flakiness when updating rustc.
+  + ''
+    sed -i '/^#!\[deny/d' src/lib.rs
   '';
 
   passthru = {
