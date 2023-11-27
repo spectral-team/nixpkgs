@@ -30,7 +30,8 @@
   # broken for the armv7l builder
   && !stdenv.hostPlatform.isAarch
 , enablePolly ? true
-}:
+, enableInstrumentation ? false
+} @args:
 
 let
   inherit (lib) optional optionals optionalString;
@@ -361,6 +362,8 @@ in
         nativeInstallFlags
       ])
     )
+  ] ++ optionals enableInstrumentation [
+    "-DLLVM_BUILD_INSTRUMENTED=IR"
   ];
 
   postInstall = ''
