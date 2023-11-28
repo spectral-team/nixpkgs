@@ -32,6 +32,7 @@
   && !stdenv.hostPlatform.isAarch
 , enablePolly ? true
 , enableInstrumentation ? false
+, withProfdata ? null
 } @args:
 
 let
@@ -69,6 +70,8 @@ let
 
 in
   assert (lib.assertMsg (!enableGoldPlugin) "Gold plugin cannot be enabled on LLVM16 due to a upstream issue: https://github.com/llvm/llvm-project/issues/61350");
+  assert (lib.assertMsg (enableInstrumentation -> stdenv.cc.isClang) "Instrumentation is only supported when compiling with Clang");
+  assert (lib.assertMsg (withProfdata != null -> stdenv.cc.isClang) "Profiling data is only supported when compiling with Clang");
   stdenv.mkDerivation (rec {
   pname = "llvm";
   inherit version;
@@ -364,6 +367,8 @@ in
     )
   ] ++ optionals enableInstrumentation [
     "-DLLVM_BUILD_INSTRUMENTED=IR"
+  ] ++ optionals (withProfdata != null) [
+    "-DLLVM_PROFDATA_FILE=${withProfdata}"
   ];
 
   postInstall = ''
