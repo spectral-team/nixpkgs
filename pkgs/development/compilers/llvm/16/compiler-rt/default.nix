@@ -3,8 +3,11 @@
 , cmake, ninja, python3, xcbuild, libllvm, linuxHeaders, libcxxabi, libxcrypt
 , doFakeLibgcc ? stdenv.hostPlatform.isFreeBSD
 , enableInstrumentation ? false
+, withProfdata ? null
 }:
 
+assert (lib.assertMsg (enableInstrumentation -> stdenv.cc.isClang) "Instrumentation is only supported when compiling with Clang");
+assert (lib.assertMsg (withProfdata != null -> stdenv.cc.isClang) "Profiling data is only supported when compiling with Clang");
 let
 
   useLLVM = stdenv.hostPlatform.useLLVM or false;
@@ -85,6 +88,8 @@ stdenv.mkDerivation {
     "-DCOMPILER_RT_ENABLE_IOS=OFF"
   ] ++ lib.optionals enableInstrumentation [
     "-DLLVM_BUILD_INSTRUMENTED=IR"
+  ] ++ lib.optionals (withProfdata != null) [
+    "-DLLVM_PROFDATA_FILE=${withProfdata}"
   ];
 
   outputs = [ "out" "dev" ];
