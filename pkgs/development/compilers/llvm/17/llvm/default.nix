@@ -29,6 +29,8 @@
   # broken for the armv7l builder
   && !stdenv.hostPlatform.isAarch
 , enablePolly ? true
+, enableInstrumentation ? false
+, withProfdata ? null
 }:
 
 let
@@ -66,6 +68,8 @@ let
 
 in
 
+  assert (lib.assertMsg (enableInstrumentation -> stdenv.cc.isClang) "Instrumentation is only supported when compiling with Clang");
+  assert (lib.assertMsg (withProfdata != null -> stdenv.cc.isClang) "Profiling data is only supported when compiling with Clang");
 stdenv.mkDerivation (rec {
   pname = "llvm";
   inherit version;
@@ -360,6 +364,10 @@ stdenv.mkDerivation (rec {
         nativeInstallFlags
       ])
     )
+  ] ++ optionals enableInstrumentation [
+    "-DLLVM_BUILD_INSTRUMENTED=IR"
+  ] ++ optionals (withProfdata != null) [
+    "-DLLVM_PROFDATA_FILE=${withProfdata}"
   ];
 
   postInstall = ''

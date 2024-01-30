@@ -2,8 +2,14 @@
 , monorepoSrc, runCommand
 , cmake, ninja, python3, xcbuild, libllvm, linuxHeaders, libcxxabi, libxcrypt
 , doFakeLibgcc ? stdenv.hostPlatform.isFreeBSD
+, enableInstrumentation ? false
+, withProfdata ? null
 }:
 
+assert (lib.assertMsg (enableInstrumentation -> stdenv.cc.isClang) "Instrumentation is only suppo
+rted when compiling with Clang");
+assert (lib.assertMsg (withProfdata != null -> stdenv.cc.isClang) "Profiling data is only support
+ed when compiling with Clang");
 let
 
   useLLVM = stdenv.hostPlatform.useLLVM or false;
@@ -82,6 +88,10 @@ stdenv.mkDerivation {
     # `COMPILER_RT_DEFAULT_TARGET_ONLY` does not apply to Darwin:
     # https://github.com/llvm/llvm-project/blob/27ef42bec80b6c010b7b3729ed0528619521a690/compiler-rt/cmake/base-config-ix.cmake#L153
     "-DCOMPILER_RT_ENABLE_IOS=OFF"
+  ] ++ lib.optionals enableInstrumentation [
+    "-DLLVM_BUILD_INSTRUMENTED=IR"
+  ] ++ lib.optionals (withProfdata != null) [
+    "-DLLVM_PROFDATA_FILE=${withProfdata}"
   ];
 
   outputs = [ "out" "dev" ];
