@@ -60,7 +60,7 @@ else stdenv.mkDerivation rec {
       -shared -o "$libName"
     '' else ''
     $CC -Wall -std=c99 -O3 -fPIC libredirect.c \
-      -shared -o "$libName"
+      -shared -ldl -o "$libName"
     ''}
 
     if [ -n "$doInstallCheck" ]; then
